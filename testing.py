@@ -1,6 +1,19 @@
 import cv2
 import numpy as np
 
+cap = cv2.VideoCapture('testVid.avi')
+while(cap.isOpened()):
+    ret, frame = cap.read()
+    #gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    print ret
+    if ret:
+    	cv2.imshow('frame',frame)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+cap.release()
+cv2.destroyAllWindows()
+
+"""
 filename = 'chessboard.jpg'
 img = cv2.imread(filename)
 gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
@@ -17,3 +30,4 @@ img[dst>0.01*dst.max()]=[0,0,255]
 cv2.imshow('dst',img)
 if cv2.waitKey(0) & 0xff == 27:
     cv2.destroyAllWindows()
+"""
