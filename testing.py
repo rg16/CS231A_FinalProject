@@ -4,24 +4,34 @@ import numpy as np
 def writeVideo(outputFile, frameList):
 	fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 	out = cv2.VideoWriter('testOutput.mp4',fourcc, 20.0, (1080, 1920))
+	for frame in frameList:
+		out.write(frame)
+	out.release()
+
 
 
 def readVideo(fileName):
+	frameList = []
 	cap = cv2.VideoCapture(fileName)
-	
-	
 	while(cap.isOpened()):
 	    ret, frame = cap.read()
-	    #gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-	    print cap.get(3)
-	    print cap.get(4)
 	    if ret:
-
-	    	out.write(frame)
+			gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+			frameList.append(gray)
 	    else:
 	    	break
 	cap.release()
-	out.release()
+	return framelist
+
+
+
+
+
+def findHomographyCost(H, kp1, kp2):
+	M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC,5.0)
+
+	return True
+	
 
 
 
@@ -73,8 +83,7 @@ def readVideo(fileName):
   img3 = cv2.drawMatchesKnn(first, kp1, second, kp2, matches, None, **draw_params)
   cv2.imwrite('test_matches.png',img3)
 
-def findHomographyCost(H, kp1, kp2):
-	return True
+
 
 def main():
 	readVideo('testVid.avi')
