@@ -7,6 +7,7 @@ def main():
 
   first = None
   second = None
+  sum = 0
 
   while(cap.isOpened()):
   
@@ -15,10 +16,10 @@ def main():
    
       if(first is None):
         first = frame
-      elif(second is None):
+      elif(second is None and sum == 32):
         second = frame
         break
-
+      sum = sum + 1
   cap.release()
  
   # Detect features in first frame
