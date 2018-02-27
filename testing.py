@@ -3,21 +3,23 @@ import numpy as np
 
 cap = cv2.VideoCapture('testVid.avi')
 
-fourcc = cv2.VideoWriter_fourcc(*'XVID')
-out = cv2.VideoWriter('testOutput.avi',fourcc, 20, (1920, 1080, 3))
+fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+out = cv2.VideoWriter('testOutput.mp4',fourcc, 20.0, (1080, 1920))
 #out = cv2.VideoWriter('output.avi',fourcc, 20.0, (640,480))
 
 while(cap.isOpened()):
     ret, frame = cap.read()
     #gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    print ret
+    print cap.get(3)
+    print cap.get(4)
     if ret:
+
     	out.write(frame)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+    else:
+    	break
 cap.release()
 out.release()
-cv2.destroyAllWindows()
+
 
 """
 filename = 'chessboard.jpg'
