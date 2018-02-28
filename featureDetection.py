@@ -44,6 +44,25 @@ def main():
   # Now we have features in two images, we can perform feature matching
   # We will use a FLANN based Matcher
 
+  flannMatch(first, kp1, des1, second, kp2, des2)
+  bruteForceMatch(first, kp1, des1, second, kp2, des2)
+
+def bruteForceMatch(first, kp1, des1, second, kp2, des2):
+  
+  bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+  matches = bf.match(des1, des2)
+
+  matches = sorted(matches, key=lambda x:x.distance )
+  
+  matched = None 
+  draw_params = dict(matchColor=(0,255,0),
+                     singlePointColor=(255,0,0),
+                     flags = 0)
+  matched = cv2.drawMatches(first,kp1,second,kp2,matches[:20], None, **draw_params)
+  cv2.imwrite('brute_force_matches.png', matched)
+
+def flannMatch(first, kp1, des1, second, kp2, des2):
+
   FLANN_INDEX_LSH = 6
   index_params= dict(algorithm = FLANN_INDEX_LSH,
                      table_number = 6, # 12
@@ -69,7 +88,7 @@ def main():
                      flags = 0)
 
   img3 = cv2.drawMatchesKnn(first, kp1, second, kp2, matches, None, **draw_params)
-  cv2.imwrite('test_matches.png',img3)
+  cv2.imwrite('flann_matches.png',img3)
 
 if __name__ == '__main__':
   main()
