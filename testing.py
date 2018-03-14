@@ -32,9 +32,17 @@ def findHomographyCost(frameList,i,j):
     H, matches1, matches2 = getHomography(im1, im2)
     if H is None:
         print "Warning: not enough matches found between frames ", i, " and " , j
+        #choose some high value....
         return None
-    print H
-    return 0
+    matches1 = np.squeeze(cv2.convertPointsToHomogeneous(matches1))
+    matches2Hat = np.matmul(H, matches1.T)
+    matches2Hat = np.squeeze(cv2.convertPointsFromHomogeneous(matches2Hat.T))
+    difference = matches2.T - matches2Hat.T
+    error = np.mean(np.linalg.norm(difference, axis=0))
+    print error
+    return error
+    #print test.shape
+    #print H.shape
     
 
 def getHomography(im1, im2):
@@ -44,8 +52,12 @@ def getHomography(im1, im2):
     if src_pts is None:
         return None
     M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC,5.0)
-    #return M, inliers1, inliers2
-    return M, kp1, kp2
+    mask = np.array(mask, dtype=bool)
+    src_pts = np.array(src_pts)
+    dst_pts = np.array(dst_pts)
+    src_pts = src_pts[mask]
+    dst_pts = dst_pts[mask]
+    return M, src_pts, dst_pts
 
 # calculates ORB keypoints and descriptors
 def getFeatures(im):
@@ -68,9 +80,12 @@ def matchFeatures(im1, kp1, des1, im2, kp2, des2, matcher='flann', minMatchCount
         matches = flann.knnMatch(des1,des2,k=2)
         # ratio test (m and n are closest, 2nd closest matches?)
         good = []
-        for m,n in matches:
-            if m.distance < 0.7*n.distance:
-                good.append(m)
+        for match in matches:
+            if len(match) == 2:
+                m = match[0]
+                n = match[1]
+                if m.distance < 0.7*n.distance:
+                    good.append(m)
         if len(good) > minMatchCount:
             src_pts = np.float32([ kp1[m.queryIdx].pt for m in good ]).reshape(-1,1,2)
             dst_pts = np.float32([ kp2[m.trainIdx].pt for m in good ]).reshape(-1,1,2)
@@ -97,7 +112,8 @@ def matchFeatures(im1, kp1, des1, im2, kp2, des2, matcher='flann', minMatchCount
 
 def main():
     frameList = readVideo('testVid.avi')
-    findHomographyCost(frameList,10,12)
+    for i in range(60):
+        findHomographyCost(frameList,10,10+i)
 
 if __name__ == '__main__':
     main()
