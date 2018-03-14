@@ -2,93 +2,103 @@ import cv2
 import numpy as np
 
 def writeVideo(outputFile, frameList):
-	fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-	out = cv2.VideoWriter('testOutput.mp4',fourcc, 20.0, (1080, 1920))
-	for frame in frameList:
-		out.write(frame)
-	out.release()
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter('testOutput.mp4',fourcc, 20.0, (1080, 1920))
+    for frame in frameList:
+        out.write(frame)
+    out.release()
 
 
-
+#read video to frame list with gray images
 def readVideo(fileName):
-	frameList = []
-	cap = cv2.VideoCapture(fileName)
-	while(cap.isOpened()):
-	    ret, frame = cap.read()
-	    if ret:
-			gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-			frameList.append(gray)
-	    else:
-	    	break
-	cap.release()
-	return framelist
+    frameList = []
+    cap = cv2.VideoCapture(fileName)
+    while(cap.isOpened()):
+        ret, frame = cap.read()
+        if ret:
+            gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+            frameList.append(gray)
+        else:
+            break
+    cap.release()
+    print "Video read successful. #frames = ", len(frameList)
+    return frameList
 
 
+#homography cost for frame i, j (assuming grayscale)
+def findHomographyCost(frameList,i,j):
+    im1 = frameList[i]
+    im2 = frameList[j]
+    H, matches1, matches2 = getHomography(im1, im2)
+    if H is None:
+        print "Warning: not enough matches found between frames ", i, " and " , j
+        return None
+    print H
+    return 0
+    
+
+def getHomography(im1, im2):
+    kp1, des1 = getFeatures(im1)
+    kp2, des2 = getFeatures(im2)
+    src_pts, dst_pts = matchFeatures(im1, kp1, des1, im2, kp2, des2, matcher='flann')
+    if src_pts is None:
+        return None
+    M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC,5.0)
+    #return M, inliers1, inliers2
+    return M, kp1, kp2
+
+# calculates ORB keypoints and descriptors
+def getFeatures(im):
+    orb = cv2.ORB_create()
+    kp = orb.detect(im, None)
+    kp, des = orb.compute(im, kp)
+    return kp, des
+
+#matches features with option of flann or brute force
+#  https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_feature2d/py_feature_homography/py_feature_homography.html
+def matchFeatures(im1, kp1, des1, im2, kp2, des2, matcher='flann', minMatchCount=10):
+    if matcher == 'flann':
+        FLANN_INDEX_LSH = 6
+        index_params= dict(algorithm = FLANN_INDEX_LSH,
+                           table_number = 6, # 12
+                           key_size = 12,     # 20
+                           multi_probe_level = 1) #2
+        search_params = dict(checks=100)
+        flann = cv2.FlannBasedMatcher(index_params,search_params)
+        matches = flann.knnMatch(des1,des2,k=2)
+        # ratio test (m and n are closest, 2nd closest matches?)
+        good = []
+        for m,n in matches:
+            if m.distance < 0.7*n.distance:
+                good.append(m)
+        if len(good) > minMatchCount:
+            src_pts = np.float32([ kp1[m.queryIdx].pt for m in good ]).reshape(-1,1,2)
+            dst_pts = np.float32([ kp2[m.trainIdx].pt for m in good ]).reshape(-1,1,2)
+            return src_pts, dst_pts
+        else:
+            return None, None
 
 
+    """          
+    if matcher == 'bf':
+        bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+        matches = bf.match(des1, des2)
+        matches = sorted(matches, key=lambda x:x.distance )
+        matched = None 
+        draw_params = dict(matchColor=(0,255,0),
+                           singlePointColor=(255,0,0),
+                           flags = 0)
+        matched = cv2.drawMatches(first,kp1,second,kp2,matches[:20], None,                         **draw_params)
+        cv2.imwrite('brute_force_matches.png', matched)
+    """
 
-def findHomographyCost(H, kp1, kp2):
-	M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC,5.0)
-
-	return True
-	
-
-
-
-
-  orb = cv2.ORB_create()
-  first = cv2.cvtColor(first, cv2.COLOR_RGB2GRAY)
-  kp1 = orb.detect(first, None)
-  kp1, des1 = orb.compute(first, kp1)
-  img = None # Weird, but it complains when you don't specify outImage in drawKeypoints
-  img = cv2.drawKeypoints(first, kp1, outImage=img, color=(0,255,0), flags=0)
-  cv2.imwrite('test_features.png', img) 
-
-  # Repeat for features in second frame
-
-  second = cv2.cvtColor(second, cv2.COLOR_RGB2GRAY)
-  kp2 = orb.detect(second, None)
-  kp2, des2 = orb.compute(second, kp2)
-  img2 = None
-  img2 = cv2.drawKeypoints(second, kp2, outImage=img2, color=(0,255,0), flags=0)
-  cv2.imwrite('test_features2.png',img2)
-
-  # Now we have features in two images, we can perform feature matching
-  # We will use a FLANN based Matcher
-
-  FLANN_INDEX_LSH = 6
-  index_params= dict(algorithm = FLANN_INDEX_LSH,
-                     table_number = 6, # 12
-                     key_size = 12,     # 20
-                     multi_probe_level = 1) #2
-  search_params = dict(checks=100)
-
-  flann = cv2.FlannBasedMatcher(index_params,search_params)
-
-  matches = flann.knnMatch(des1,des2,k=2)
-
-  # A mask that will indicate which matches are 'good' matches
-  matchesMask = [[0,0] for i in xrange(len(matches))]
-
-  # Apply ratio test to filter out 'bad' matches
-  for i,(m,n) in enumerate(matches):
-    if m.distance < 0.7*n.distance:
-        matchesMask[i]=[1,0]
-  
-  draw_params = dict(matchColor=(0,255,0),
-                     singlePointColor=(255,0,0),
-                     matchesMask=matchesMask,
-                     flags = 0)
-
-  img3 = cv2.drawMatchesKnn(first, kp1, second, kp2, matches, None, **draw_params)
-  cv2.imwrite('test_matches.png',img3)
 
 
 
 def main():
-	readVideo('testVid.avi')
-
+    frameList = readVideo('testVid.avi')
+    findHomographyCost(frameList,10,12)
 
 if __name__ == '__main__':
-  main()
+    main()
 
