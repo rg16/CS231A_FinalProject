@@ -60,11 +60,15 @@ def findHomographyCost(frameList,i,j):
     return error
 
 def findVelocityCost(i,j,speedupFactor):
-  
   tau_s = 200 # Parameter used in paper, but results aren't super sensitive to changes
-  diff = np.abs((j-1) - speedupFactor)
+  diff = np.abs(((j-i) - speedupFactor)**2)
   return min(diff, tau_s)
-    
+
+def findAccelerationCost(h,i,j):
+    tau_a = 200 # Parameter used in paper
+    diff = np.abs(((j-i)-(i-h))**2)
+    return min(diff,tau_a)
+
 
 def getHomography(im1, im2):
     kp1, des1 = getFeatures(im1)
@@ -115,12 +119,12 @@ def matchFeatures(im1, kp1, des1, im2, kp2, des2, matcher='flann', minMatchCount
             return None, None
 
 
-    """          
+    """
     if matcher == 'bf':
         bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
         matches = bf.match(des1, des2)
         matches = sorted(matches, key=lambda x:x.distance )
-        matched = None 
+        matched = None
         draw_params = dict(matchColor=(0,255,0),
                            singlePointColor=(255,0,0),
                            flags = 0)
@@ -145,4 +149,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
