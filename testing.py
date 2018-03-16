@@ -29,20 +29,41 @@ def readVideo(fileName):
 def findHomographyCost(frameList,i,j):
     im1 = frameList[i]
     im2 = frameList[j]
-    H, matches1, matches2 = getHomography(im1, im2)
-    if H is None:
+
+    [h1, w1] = im1.shape
+    d = np.sqrt(h1**2 + w1**2) # The length of the diagonal in pixels
+    tau_c = 0.1*d
+    gamma = 0.5*d
+
+    X = getHomography(im1, im2)
+    if X is None:
         print "Warning: not enough matches found between frames ", i, " and " , j
-        #choose some high value....
-        return None
+        return gamma
+
+    H, matches1, matches2 = X
+
     matches1 = np.squeeze(cv2.convertPointsToHomogeneous(matches1))
     matches2Hat = np.matmul(H, matches1.T)
     matches2Hat = np.squeeze(cv2.convertPointsFromHomogeneous(matches2Hat.T))
     difference = matches2.T - matches2Hat.T
     error = np.mean(np.linalg.norm(difference, axis=0))
-    print error
+
+    # Calculating C_o from the paper
+    if error >= tau_c:
+      error = gamma
+    else:
+      center1 = np.array([h1/2, w1/2, 1])
+      center1hat = np.matmul(H, center1.T).reshape(3,1)
+      center1hat = np.squeeze(cv2.convertPointsFromHomogeneous(center1hat.T))
+      centerCost = np.linalg.norm(center1[0:2] - center1hat)
+
     return error
-    #print test.shape
-    #print H.shape
+
+def findVelocityCost(i,j,speedupFactor):
+  
+  tau_s = 200 # Parameter used in paper, but results aren't super sensitive to changes
+  diff = np.abs((j-1) - speedupFactor)
+  return min(diff, tau_s)
     
 
 def getHomography(im1, im2):
@@ -112,8 +133,15 @@ def matchFeatures(im1, kp1, des1, im2, kp2, des2, matcher='flann', minMatchCount
 
 def main():
     frameList = readVideo('testVid.avi')
-    for i in range(60):
-        findHomographyCost(frameList,10,10+i)
+    costMatrix = np.zeros((len(frameList),len(frameList)))
+    print costMatrix.shape
+    w = 30 # compare each frame to the next 30 frames
+    speedupFactor = 4 # Want to speed up the video by a factor of 4
+    for i in range(0, len(frameList)-w):
+        for j in range(i+1, i+w):
+            C_m = findHomographyCost(frameList,i,j)
+            C_s = findVelocityCost(i, j, speedupFactor)
+            costMatrix[i,j] = C_m + C_s
 
 if __name__ == '__main__':
     main()
