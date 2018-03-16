@@ -133,19 +133,19 @@ def matchFeatures(im1, kp1, des1, im2, kp2, des2, matcher='flann', minMatchCount
     """
 
 
-
-
 def main():
     frameList = readVideo('testVid.avi')
     costMatrix = np.zeros((len(frameList),len(frameList)))
     print costMatrix.shape
-    w = 30 # compare each frame to the next 30 frames
     speedupFactor = 4 # Want to speed up the video by a factor of 4
+    windowsize = 2*speedupFactor
     for i in range(0, len(frameList)-w):
         for j in range(i+1, i+w):
             C_m = findHomographyCost(frameList,i,j)
             C_s = findVelocityCost(i, j, speedupFactor)
-            costMatrix[i,j] = C_m + C_s
+            lambda_s = 200 # Parameter weight for velocity cost
+            costMatrix[i,j] = C_m + lambda_s * C_s
+
 
 if __name__ == '__main__':
     main()
