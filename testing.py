@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
 
 def writeVideo(outputFile, frameList):
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
@@ -138,14 +139,30 @@ def main():
     costMatrix = np.zeros((len(frameList),len(frameList)))
     print costMatrix.shape
     speedupFactor = 4 # Want to speed up the video by a factor of 4
-    windowsize = 2*speedupFactor
-    for i in range(0, len(frameList)-w):
+    w = 2*speedupFactor
+
+    g = 4
+    lambda_s = 200 # Parameter weight for velocity cost
+    lambda_a = 80 # Parameter for acceleration cost
+    
+    for i in range(0, g):
         for j in range(i+1, i+w):
             C_m = findHomographyCost(frameList,i,j)
             C_s = findVelocityCost(i, j, speedupFactor)
-            lambda_s = 200 # Parameter weight for velocity cost
             costMatrix[i,j] = C_m + lambda_s * C_s
 
+    for i in range(g, len(frameList)):
+        for j in range(i+1, min(i+w, len(frameList))):
+            C_m = findHomographyCost(frameList, i, j)
+            C_s = findVelocityCost(i, j, speedupFactor)
+            lambda_s = 200
+             
+            c = C_m + lambda_s * C_s
+
+            # Could make this faster potentially by not using a for loop 
+            costMatrix[i,j] = c + min([costMatrix[i-k,i] +  lambda_a * findAccelerationCost(i-k, i, j) for k in range(1,w)])
+
+    cv2.imwrite('costMatrix.png', costMatrix)
 
 if __name__ == '__main__':
     main()
