@@ -2,30 +2,8 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.io
+import utils
 
-def writeVideo(outputFile, frameList):
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter('testOutput.mp4',fourcc, 20.0, (1080, 1920))
-    for frame in frameList:
-        out.write(frame)
-    out.release()
-
-
-#read video to frame list with gray images
-def readVideo(fileName):
-    frameList = []
-    cap = cv2.VideoCapture(fileName)
-    while(cap.isOpened()):
-        ret, frame = cap.read()
-        if ret:
-            gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-            frameList.append(gray)
-        else:
-            break
-    cap.release()
-    print "Video read successful. #frames = ", len(frameList)
-    print "Frame size = ", frameList[0].shape
-    return frameList
 
 
 #homography cost for frame i, j (assuming grayscale)
@@ -127,7 +105,6 @@ def matchFeatures(im1, kp1, des1, im2, kp2, des2, matcher='flann', minMatchCount
         else:
             return None, None
 
-
     """
     if matcher == 'bf':
         bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
@@ -143,14 +120,14 @@ def matchFeatures(im1, kp1, des1, im2, kp2, des2, matcher='flann', minMatchCount
 
 
 def main():
-    frameList = readVideo('testVid.avi')
+    frameList = utils.readVideo('testVid.avi')
     costMatrix = np.zeros((len(frameList),len(frameList)))
     traceBack = np.zeros((len(frameList), len(frameList)))
     print costMatrix.shape
-    speedupFactor = 10 # Want to speed up the video by a factor of 4
+    speedupFactor = 4 # Want to speed up the video by a factor of 4
     w = 2*speedupFactor
 
-    g = w
+    g = 4
     lambda_s = 200 # Parameter weight for velocity cost
     lambda_a = 80 # Parameter for acceleration cost
 
@@ -175,13 +152,12 @@ def main():
             test = c + min(D_vi)
 
             index = len(D_vi) - np.argmin(D_vi)
-            print index
             costMatrix[i,j] = c + min([costMatrix[i-k,i] +  lambda_a * findAccelerationCost(i-k, i, j) for k in range(1,w)])
             homographyCostMat[i,j] = C_m
 
     #cv2.imwrite('costMatrix.png', costMatrix)
 
-    costmatrix = costmatrix * 255/np.amax(costMatrix)
+    costMatrix = costMatrix * 255/np.amax(costMatrix)
     cv2.imwrite('costMatrix.png', costMatrix)
     scipy.io.savemat('costMatrix.mat', dict(costMatrix=costMatrix, homographyCostMat=homographyCostMat))
 
