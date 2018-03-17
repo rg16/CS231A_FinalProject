@@ -5,7 +5,7 @@ import scipy.io
 
 def writeVideo(outputFile, frameList):
   fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-  out = cv2.VideoWriter('testOutput.mp4', fourcc, 20.0, (1080, 1920))
+  out = cv2.VideoWriter(outputFile, fourcc, 20.0, (1080, 1920))
   for frame in frameList:
     out.write(frame)
   out.release()
