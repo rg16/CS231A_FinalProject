@@ -8,8 +8,8 @@ Trajectory = namedtuple("Trajectory", "x y a") # a refers to angle
 
 def main():
 
-  frameList = readVideo('testVid.avi')  
-
+  frameList = readVideo('testVid.avi')
+  
 
 if __name__ == "__main__":
   main()
