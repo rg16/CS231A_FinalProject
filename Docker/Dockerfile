@@ -6,5 +6,5 @@ RUN conda install opencv
 RUN pip uninstall matplotlib -y # Weird, but it works. Otherwise can't import pyplot
 RUN pip install matplotlib
 
-
+RUN pip install sk-video
 CMD ["python","Hello.py"]
