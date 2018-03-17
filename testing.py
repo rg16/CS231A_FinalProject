@@ -137,11 +137,12 @@ def matchFeatures(im1, kp1, des1, im2, kp2, des2, matcher='flann', minMatchCount
 def main():
     frameList = readVideo('testVid.avi')
     costMatrix = np.zeros((len(frameList),len(frameList)))
+    traceBack = np.zeros((len(frameList), len(frameList)))
     print costMatrix.shape
     speedupFactor = 4 # Want to speed up the video by a factor of 4
     w = 2*speedupFactor
 
-    g = 4
+    g = w
     lambda_s = 200 # Parameter weight for velocity cost
     lambda_a = 80 # Parameter for acceleration cost
     
@@ -160,8 +161,17 @@ def main():
             c = C_m + lambda_s * C_s
 
             # Could make this faster potentially by not using a for loop 
+            D_vi = costMatrix[max(0,i-w+1):i-1, i] 
+            C_a = [lambda_a * findAccelerationCost(k, i, j) for k in range(max(0, i-w+1), i-1)]
+            D_vi = D_vi + C_a
+            test = c + min(D_vi)
+
+            index = len(D_vi) - np.argmin(D_vi)
+            print index
             costMatrix[i,j] = c + min([costMatrix[i-k,i] +  lambda_a * findAccelerationCost(i-k, i, j) for k in range(1,w)])
 
+
+    costmatrix = costmatrix * 255/np.amax(costMatrix)
     cv2.imwrite('costMatrix.png', costMatrix)
 
 if __name__ == '__main__':
