@@ -55,7 +55,7 @@ def findHomographyCost(frameList,i,j):
     difference = matches2.T - matches2Hat.T
     norms = np.linalg.norm(difference, axis=0)
     error = np.mean(norms)
-    
+
 
     # Calculating C_o from the paper
     if error >= tau_c:
@@ -137,7 +137,7 @@ def matchFeatures(im1, kp1, des1, im2, kp2, des2, matcher='flann', minMatchCount
         draw_params = dict(matchColor=(0,255,0),
                            singlePointColor=(255,0,0),
                            flags = 0)
-        matched = cv2.drawMatches(first,kp1,second,kp2,matches[:20], None,                         **draw_params)
+        matched = cv2.drawMatches(first,kp1,second,kp2,matches[:20], None,**draw_params)
         cv2.imwrite('brute_force_matches.png', matched)
     """
 
@@ -155,7 +155,7 @@ def main():
     lambda_a = 80 # Parameter for acceleration cost
 
     homographyCostMat = np.zeros((len(frameList),len(frameList)))
-    
+
     for i in range(0, g):
         for j in range(i+1, i+w):
             C_m = findHomographyCost(frameList,i,j)
@@ -168,8 +168,8 @@ def main():
             C_m = findHomographyCost(frameList, i, j)
             C_s = findVelocityCost(i, j, speedupFactor)
             c = C_m + lambda_s * C_s
-            # Could make this faster potentially by not using a for loop 
-            D_vi = costMatrix[max(0,i-w+1):i-1, i] 
+            # Could make this faster potentially by not using a for loop
+            D_vi = costMatrix[max(0,i-w+1):i-1, i]
             C_a = [lambda_a * findAccelerationCost(k, i, j) for k in range(max(0, i-w+1), i-1)]
             D_vi = D_vi + C_a
             test = c + min(D_vi)
