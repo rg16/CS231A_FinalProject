@@ -185,5 +185,7 @@ def main():
     cv2.imwrite('costMatrix.png', costMatrix)
     scipy.io.savemat('costMatrix.mat', dict(costMatrix=costMatrix, homographyCostMat=homographyCostMat))
 
+    scipy.io.savemat('costMatrix.mat', dict(costMatrix=costMatrix, homographyCostMat=homographyCostMat))
+
 if __name__ == '__main__':
     main()
