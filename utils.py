@@ -17,8 +17,8 @@ def writeVideo(outputFile, frameList):
   outputdata = outputdata.astype(np.uint8)
 
   writer = skvideo.io.FFmpegWriter("SKoutputvideo.mp4")
-  for i in xrange(5):
-          writer.writeFrame(outputdata[i, :, :, :])
+  for i in range(0, len(frameList)):
+    writer.writeFrame(frameList[i])
   writer.close()
 
 def readVideo(fileName):

@@ -135,14 +135,16 @@ def main():
     curr2 = curr2[vert_border:curr2.shape[0]-vert_border, \
                   HORIZONTAL_BORDER_CROP:curr2.shape[1]-HORIZONTAL_BORDER_CROP] 
 
-
-    curr2 = cv2.resize(curr2, curr.shape)
-    curr2 = np.transpose(curr2)
+    curr2 = cv2.resize(curr2, (curr.shape[1], curr.shape[0]))
     
-    canvas = np.zeros((curr.shape[0], curr.shape[1]*2 + 10))
+#    cv2.imwrite('test.png', curr2)
+#    print curr2.shape    
+#    raise Exception('Not Implemented Error')
+
+#    canvas = np.zeros((curr.shape[0], curr.shape[1]*2 + 10))
    
-    canvas[:, 0:curr.shape[1]] = curr
-    canvas[:, curr.shape[1]+10:curr.shape[1]*2+10] = curr2
+#    canvas[:, 0:curr.shape[1]] = curr
+#    canvas[:, curr.shape[1]+10:curr.shape[1]*2+10] = curr2
 
     newFrames.append(curr2)
 
