@@ -30,7 +30,10 @@ def readVideo(fileName):
     ret, frame = cap.read()
     if ret:
       gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+      watermark = int(0.1 * gray.shape[0])
+      gray = gray[:-watermark,:]
       gray = cv2.resize(gray, (0,0), fx=0.5, fy=0.5) 
+      gray = gray[:]
       frameList.append(gray)
     else:
       break
