@@ -16,9 +16,12 @@ def writeVideo(outputFile, frameList):
   outputdata = np.random.random(size=(5, 480, 680, 3)) * 255
   outputdata = outputdata.astype(np.uint8)
 
-  writer = skvideo.io.FFmpegWriter("SKoutputvideo.mp4")
-  for i in xrange(5):
-          writer.writeFrame(outputdata[i, :, :, :])
+#  frameRate = "15"
+#  inputDict = {"-r" : frameRate } 
+#  writer = skvideo.io.FFmpegWriter(outputFile, inputDict)
+  writer = skvideo.io.FFmpegWriter(outputFile)
+  for i in range(0, len(frameList)):
+    writer.writeFrame(frameList[i])
   writer.close()
 
 def readVideo(fileName):
@@ -35,10 +38,4 @@ def readVideo(fileName):
   print "Video read successful. #frames = ", len(frameList)
   print "Frame size = ", frameList[0].shape
   return frameList
-
-
-
-
-
-
 

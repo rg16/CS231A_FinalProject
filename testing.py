@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.io
 import utils
-
+import video_stabilization as vs
 
 
 def findConsecutiveCenteringCosts(frameList):
@@ -50,7 +50,7 @@ def findHomographyCost(frameList,i,j):
     difference = matches2.T - matches2Hat.T
     norms = np.linalg.norm(difference, axis=0)
     error = np.mean(norms)
-    
+
     # Calculating C_o from the paper
     if error >= tau_c:
       error = gamma
@@ -135,26 +135,23 @@ def matchFeatures(im1, kp1, des1, im2, kp2, des2, matcher='flann', minMatchCount
         draw_params = dict(matchColor=(0,255,0),
                            singlePointColor=(255,0,0),
                            flags = 0)
-        matched = cv2.drawMatches(first,kp1,second,kp2,matches[:20], None,                         **draw_params)
+        matched = cv2.drawMatches(first,kp1,second,kp2,matches[:20], None,**draw_params)
         cv2.imwrite('brute_force_matches.png', matched)
     """
 
 
 def main():
-    utils.writeVideo(None, None)
-    """
-    frameList = utils.readVideo('testVid.avi')    
+    frameList = utils.readVideo('testVideo2.mp4')
     numFrames = len(frameList)
     costMatrix = np.zeros((numFrames, numFrames))
     traceBack = np.zeros((numFrames, numFrames))
 
-    print costMatrix.shape
     speedupFactor = 4 # Want to speed up the video by a factor of 4
     w = 2*speedupFactor
 
     g = 4
-    lambda_s = 200 # Parameter weight for velocity cost
-    lambda_a = 80 # Parameter for acceleration cost
+    lambda_s = 1 # Parameter weight for velocity cost
+    lambda_a = 0 # Parameter for acceleration cost
     optimizeSpeed = True
 
     centeringCosts = None
@@ -165,9 +162,9 @@ def main():
         cumSumCosts = np.insert(cumSumCosts, 0, 0.0, axis=0) #add a zero to the beginning of cumsum to make indexing easier
 
     homographyCostMat = np.zeros((len(frameList),len(frameList)))
-    
+
     for i in range(0, g):
-        print 'progress; ', float(i)/len(frameList), '%'
+#        print 'progress; ', float(i)/len(frameList), '%'
         for j in range(i+1, i+w):
             C_m = findHomographyCost(frameList,i,j)
             C_s = findVelocityCost(i, j, speedupFactor)
@@ -175,7 +172,7 @@ def main():
             homographyCostMat[i,j] = C_m
 
     for i in range(g, len(frameList)):
-        print 'progress; ', float(i)/len(frameList), '%'
+#        print 'progress; ', float(i)/len(frameList), '%'
         for j in range(i+1, min(i+w, len(frameList))):
             C_m = 0
             if (optimizeSpeed):
@@ -184,25 +181,52 @@ def main():
                 C_m = findHomographyCost(frameList, i, j)
             C_s = findVelocityCost(i, j, speedupFactor)
             c = C_m + lambda_s * C_s
-            # Could make this faster potentially by not using a for loop 
-            D_vi = costMatrix[max(0,i-w+1):i-1, i] 
+            # Could make this faster potentially by not using a for loop
+            D_vi = costMatrix[max(0,i-w+1):i-1, i]
             C_a = [lambda_a * findAccelerationCost(k, i, j) for k in range(max(0, i-w+1), i-1)]
             D_vi = D_vi + C_a
-            test = c + min(D_vi)
+            costMatrix[i,j] = c + min(D_vi)
 
-            index = len(D_vi) - np.argmin(D_vi)
-            costMatrix[i,j] = c + min([costMatrix[i-k,i] +  lambda_a * findAccelerationCost(i-k, i, j) for k in range(1,w)])
+            index = i - len(D_vi) + np.argmin(D_vi)
+            traceBack[i,j] = index
+#            costMatrix[i,j] = c + min([costMatrix[i-k,i] +  lambda_a * findAccelerationCost(i-k, i, j) for k in range(1,w)])
             homographyCostMat[i,j] = C_m
 
-    #cv2.imwrite('costMatrix.png', costMatrix)
 
-    costMatrix = costMatrix * 255/np.amax(costMatrix)
-    #cv2.imwrite('costMatrix.png', costMatrix)
+    min_val = np.inf
+    s,d = (numFrames-g, numFrames-g+1)
+    for i in range(numFrames-g, numFrames):
+      for j in range(i+1, i+w):
+        if j < numFrames:
+          if costMatrix[i,j] < min_val:
+            min_val = costMatrix[i,j]
+            s,d = (i, j)
+
+    p = [d]
+    while s > g:
+      p = [s] + p
+      b = traceBack[int(s), int(d)]
+      d = s
+      s = b
+
+    p = [s] + p
+    # Now we have the list of frames
+
+    newFrames = []
+    for i in range(0,len(p)):
+      newFrames.append(frameList[int(p[i])])
+
+#    newFrames = vs.stabilize(newFrames) #imported video_stabilization.py as vs
+    utils.writeVideo('test.mp4', newFrames)
+
+    naiveFrames = frameList[0:numFrames:speedupFactor]
+
+    utils.writeVideo('naive_test.mp4', naiveFrames)
+
+
     scipy.io.savemat('costMatrix.mat', dict(costMatrix=costMatrix, homographyCostMat=homographyCostMat))
 
     scipy.io.savemat('costMatrix.mat', dict(costMatrix=costMatrix, homographyCostMat=homographyCostMat))
-    """
-    
 
 if __name__ == '__main__':
     main()
