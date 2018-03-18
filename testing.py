@@ -50,12 +50,7 @@ def findHomographyCost(frameList,i,j):
     difference = matches2.T - matches2Hat.T
     norms = np.linalg.norm(difference, axis=0)
     error = np.mean(norms)
-<<<<<<< HEAD
 
-
-=======
-
->>>>>>> a9c85b66c2eb0184736445cf662c4a5b4c3f8955
     # Calculating C_o from the paper
     if error >= tau_c:
       error = gamma
@@ -146,7 +141,7 @@ def matchFeatures(im1, kp1, des1, im2, kp2, des2, matcher='flann', minMatchCount
 
 
 def main():
-    frameList = utils.readVideo('testVideo2.mp4')
+    frameList = utils.readVideo('andreamble.mov')
     numFrames = len(frameList)
     costMatrix = np.zeros((numFrames, numFrames))
     traceBack = np.zeros((numFrames, numFrames))

@@ -139,16 +139,16 @@ def stabilize(frameList):
     curr2 = curr2[vert_border:curr2.shape[0]-vert_border, \
                   HORIZONTAL_BORDER_CROP:curr2.shape[1]-HORIZONTAL_BORDER_CROP]
 
-<<<<<<< HEAD
-
-    curr2 = cv2.resize(curr2, curr.shape)
-    curr2 = np.transpose(curr2)
-
-    canvas = np.zeros((curr.shape[0], curr.shape[1]*2 + 10))
-
-    canvas[:, 0:curr.shape[1]] = curr
-    canvas[:, curr.shape[1]+10:curr.shape[1]*2+10] = curr2
-=======
+# <<<<<<< HEAD
+#
+#     curr2 = cv2.resize(curr2, curr.shape)
+#     curr2 = np.transpose(curr2)
+#
+#     canvas = np.zeros((curr.shape[0], curr.shape[1]*2 + 10))
+#
+#     canvas[:, 0:curr.shape[1]] = curr
+#     canvas[:, curr.shape[1]+10:curr.shape[1]*2+10] = curr2
+# =======
     curr2 = cv2.resize(curr2, (curr.shape[1], curr.shape[0]))
 
     cv2.imwrite('test.png', curr2)
@@ -159,7 +159,6 @@ def stabilize(frameList):
 
 #    canvas[:, 0:curr.shape[1]] = curr
 #    canvas[:, curr.shape[1]+10:curr.shape[1]*2+10] = curr2
->>>>>>> a9c85b66c2eb0184736445cf662c4a5b4c3f8955
 
     newFrames.append(curr2)
 
