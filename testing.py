@@ -139,7 +139,7 @@ def makeSBS(f1, f2):
 
 
 def main():
-    frameList = utils.readVideo('andreamble.mov')
+    frameList = utils.readVideo('rickyrun.mov')
     numFrames = len(frameList)
     costMatrix = np.zeros((numFrames, numFrames))
     traceBack = np.zeros((numFrames, numFrames))
