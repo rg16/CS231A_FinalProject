@@ -9,9 +9,7 @@ Trajectory = namedtuple("Trajectory", "x y a") # a refers to angle
 SMOOTHING_RADIUS = 30
 HORIZONTAL_BORDER_CROP = 20
 
-def main():
-
-  frameList = utils.readVideo('testVid.avi')
+def stabilize(frameList):
 
   prevFrame = frameList[0]
   lastT = None
@@ -35,11 +33,17 @@ def main():
      prev_corners2 = np.asarray(prev_corners2)
      curr_corners2 = np.asarray(curr_corners2)
 
-     T = cv2.estimateRigidTransform(prev_corners2, curr_corners2, False)
+     T = None
+     try:
+       T = cv2.estimateRigidTransform(prev_corners2, curr_corners2, False)
+     except cv2.error:
+       print 'Error calculating T'
      if T is None:
+
        if lastT is None:
          continue
        T = lastT
+
      else:
        lastT = T
 
@@ -121,7 +125,7 @@ def main():
 
   for k in range(0, len(frameList)-1):
 
-    curr = frameList[i]
+    curr = frameList[k]
     T[0,0] =  np.cos(new_prev2curr_transform[k].da)
     T[0,1] = -np.sin(new_prev2curr_transform[k].da)
     T[1,0] =  np.sin(new_prev2curr_transform[k].da)
@@ -135,6 +139,7 @@ def main():
     curr2 = curr2[vert_border:curr2.shape[0]-vert_border, \
                   HORIZONTAL_BORDER_CROP:curr2.shape[1]-HORIZONTAL_BORDER_CROP]
 
+<<<<<<< HEAD
 
     curr2 = cv2.resize(curr2, curr.shape)
     curr2 = np.transpose(curr2)
@@ -143,10 +148,22 @@ def main():
 
     canvas[:, 0:curr.shape[1]] = curr
     canvas[:, curr.shape[1]+10:curr.shape[1]*2+10] = curr2
+=======
+    curr2 = cv2.resize(curr2, (curr.shape[1], curr.shape[0]))
+
+    cv2.imwrite('test.png', curr2)
+#    print curr2.shape
+#    raise Exception('Not Implemented Error')
+
+#    canvas = np.zeros((curr.shape[0], curr.shape[1]*2 + 10))
+
+#    canvas[:, 0:curr.shape[1]] = curr
+#    canvas[:, curr.shape[1]+10:curr.shape[1]*2+10] = curr2
+>>>>>>> a9c85b66c2eb0184736445cf662c4a5b4c3f8955
 
     newFrames.append(curr2)
 
-  utils.writeVideo('test.avi', newFrames)
+  return newFrames
 
 if __name__ == "__main__":
   main()
