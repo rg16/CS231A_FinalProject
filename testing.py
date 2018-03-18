@@ -14,6 +14,7 @@ def findConsecutiveCenteringCosts(frameList):
     tau_c = 0.1*d
     gamma = 0.5*d
     for i in range(numFrames-1):
+        print 'progress; ', float(i)/len(frameList), '%'
         im1 = frameList[i]
         im2 = frameList[i+1]
         H, matches1, matches2 = getHomography(im1, im2)
@@ -138,7 +139,7 @@ def makeSBS(f1, f2):
 
 
 def main():
-    frameList = utils.readVideo('longTest.mov')
+    frameList = utils.readVideo('andreamble.mov')
     numFrames = len(frameList)
     costMatrix = np.zeros((numFrames, numFrames))
     traceBack = np.zeros((numFrames, numFrames))
