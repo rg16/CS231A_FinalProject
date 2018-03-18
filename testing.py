@@ -148,8 +148,8 @@ def main():
     w = 2*speedupFactor
 
     g = 4
-    lambda_s = 1 # Parameter weight for velocity cost
-    lambda_a = 0 # Parameter for acceleration cost
+    lambda_s = 200 # Parameter weight for velocity cost
+    lambda_a = 80 # Parameter for acceleration cost
     optimizeSpeed = True
 
     centeringCosts = None
