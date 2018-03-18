@@ -126,22 +126,19 @@ def matchFeatures(im1, kp1, des1, im2, kp2, des2, matcher='flann', minMatchCount
         else:
             return None, None
 
-    """
-    if matcher == 'bf':
-        bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-        matches = bf.match(des1, des2)
-        matches = sorted(matches, key=lambda x:x.distance )
-        matched = None
-        draw_params = dict(matchColor=(0,255,0),
-                           singlePointColor=(255,0,0),
-                           flags = 0)
-        matched = cv2.drawMatches(first,kp1,second,kp2,matches[:20], None,**draw_params)
-        cv2.imwrite('brute_force_matches.png', matched)
-    """
+def makeSBS(f1, f2):
+    newFrames = []
+    for i, frame in enumerate(f1):
+        if i == len(f2):
+            break
+        frame2 = f2[i]
+        newFrame = np.concatenate((frame, frame2))
+        newFrames.append(newFrame)
+    return newFrames
 
 
 def main():
-    frameList = utils.readVideo('testVideo2.mp4')
+    frameList = utils.readVideo('longTest.mov')
     numFrames = len(frameList)
     costMatrix = np.zeros((numFrames, numFrames))
     traceBack = np.zeros((numFrames, numFrames))
@@ -222,6 +219,9 @@ def main():
     naiveFrames = frameList[0:numFrames:speedupFactor]
 
     utils.writeVideo('naive_test.mp4', naiveFrames)
+
+    sbsFrames = makeSBS(newFrames, naiveFrames)
+    utils.writeVideo('SBS_test.mp4', sbsFrames)
 
 
     scipy.io.savemat('costMatrix.mat', dict(costMatrix=costMatrix, homographyCostMat=homographyCostMat))
