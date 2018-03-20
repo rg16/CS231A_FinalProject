@@ -7,7 +7,7 @@ import video_stabilization as vs
 
 # Global parameters for tuning
 # ---------------------------
-SPEEDUP_FACTOR = 4
+SPEEDUP_FACTOR = 8
 COST_CHAINING = True
 LAMBDA_S = 200
 LAMBDA_A = 80
@@ -24,6 +24,7 @@ def findConsecutiveCenteringCosts(frameList):
         im1 = frameList[i]
         im2 = frameList[i+1]
         H, matches1, matches2 = getHomography(im1, im2)
+
         if H is None:
             centeringCosts[i] = gamma
         else:
@@ -78,6 +79,12 @@ def findAccelerationCost(h,i,j):
     diff = np.abs(((j-i)-(i-h))**2)
     return min(diff,tau_a)
 
+def findBlurCost(frameList, j):
+# Only calculating the blurriness of the next frame
+    im1 = frameList[i]
+    im2 = frameList[j]
+    blurriness = cv2.Laplacian(im1, im2).var() 
+    return blurriness
 
 def getHomography(im1, im2):
     kp1, des1 = getFeatures(im1)
