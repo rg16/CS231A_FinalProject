@@ -139,16 +139,16 @@ def makeSBS(f1, f2):
 
 
 def main():
-    frameList = utils.readVideo('rickyrun.mov')
+    frameList = utils.readVideo('andreamble.mov')
     numFrames = len(frameList)
     costMatrix = np.zeros((numFrames, numFrames))
     traceBack = np.zeros((numFrames, numFrames))
 
-    speedupFactor = 4 # Want to speed up the video by a factor of 4
+    speedupFactor = 8 # Want to speed up the video by a factor of 4
     w = 2*speedupFactor
 
     g = 4
-    lambda_s = 200 # Parameter weight for velocity cost
+    lambda_s = 2000 # Parameter weight for velocity cost
     lambda_a = 80 # Parameter for acceleration cost
     optimizeSpeed = True
 
