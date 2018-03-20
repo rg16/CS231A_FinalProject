@@ -16,7 +16,7 @@ def writeVideo(outputFile, frameList):
 
 
 #  frameRate = "15"
-#  inputDict = {"-r" : frameRate } 
+#  inputDict = {"-r" : frameRate }
 #  writer = skvideo.io.FFmpegWriter(outputFile, inputDict)
   writer = skvideo.io.FFmpegWriter(outputFile)
   for i in range(0, len(frameList)):
@@ -32,7 +32,7 @@ def readVideo(fileName):
       gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
       watermark = int(0.1 * gray.shape[0])
       gray = gray[:-watermark,:]
-      gray = cv2.resize(gray, (0,0), fx=0.5, fy=0.5) 
+      gray = cv2.resize(gray, (0,0), fx=0.5, fy=0.5)
       gray = gray[:]
       frameList.append(gray)
     else:
@@ -42,21 +42,43 @@ def readVideo(fileName):
   print "Frame size = ", frameList[0].shape
   return frameList
 
+def getColorFrames(fileName, p):
+    colorFrameList = []
+    count = 0
+    p_count = 0
+    cap = cv2.VideoCapture(fileName)
+    while(cap.isOpened()):
+        ret, frame = cap.read()
+        if ret:
+          if count == p[p_count]:
+              colorFrameList.append(frame)
+              p_count = p_count + 1
+              count = count + 1
+          else:
+              count = count + 1
+        else:
+
+          break
+    cap.release()
+    print "Color Video read successful. #frames = ", len(colorFrameList)
+    print "Frame size = ", colorFrameList[0].shape
+    return colorFrameList
+
 def computeStdDev(frames, start, num):
-  
+
   first = frames[start]
   sequence = first.reshape(first.shape[0], first.shape[1], 1)
   for i in range(1,num):
 
     curr = frames[i].reshape((frames[i].shape[0], frames[i].shape[1], 1))
-    sequence = np.concatenate((sequence, curr), axis = 2)  
+    sequence = np.concatenate((sequence, curr), axis = 2)
 
   [rows, cols, frames] = sequence.shape
 
   canvas = np.zeros((rows, cols))
   for i in range(0, rows):
     for j in range(0, cols):
-    
+
       vals = sequence[i,j,:]
       canvas[i,j] = np.std(vals)
 

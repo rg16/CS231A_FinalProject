@@ -4,10 +4,11 @@ import matplotlib.pyplot as plt
 import scipy.io
 import utils
 import video_stabilization as vs
+import csv
 
 # Global parameters for tuning
 # ---------------------------
-SPEEDUP_FACTOR = 4
+SPEEDUP_FACTOR = 8
 COST_CHAINING = True
 LAMBDA_S = 200
 LAMBDA_A = 80
@@ -20,7 +21,7 @@ def findConsecutiveCenteringCosts(frameList):
     tau_c = 0.1*d
     gamma = 0.5*d
     for i in range(numFrames-1):
-        print 'progress; ', float(i)/len(frameList), '%'
+        print 'progress; ', (float(i)/len(frameList))*100, '%'
         im1 = frameList[i]
         im2 = frameList[i+1]
         H, matches1, matches2 = getHomography(im1, im2)
@@ -236,21 +237,28 @@ def compute_optimum_frames(frameList, speedupFactor):
     for i in range(0,len(p)):
       newFrames.append(frameList[int(p[i])])
 
-    return newFrames, costMatrix
+    return newFrames, costMatrix, p
 
 def main():
 
     ### SET INPUT/OUTPUT LOCATIONS ###
 
     inputFile = 'Input/andreamble.mov'
-    outputDirectory = 'Output/'
+    outputDirectory = 'Output/andreamble/'
 
     ### -------------------------- ###
 
     frameList = utils.readVideo(inputFile)
-    newFrames, costMatrix = compute_optimum_frames(frameList, 4)
+    newFrames, costMatrix, p = compute_optimum_frames(frameList, SPEEDUP_FACTOR)
+
+    pFile = open(outputDirectory + 'p.csv', 'wb')
+    with pFile:
+        writer = csv.writer(pFile, quoting = csv.QUOTE_ALL)
+        writer.writerow(p)
+
 
 #    newFrames = vs.stabilize(newFrames) #imported video_stabilization.py as vs
+    # colorFrames = utils.getColorFrames(inputFile, p)
     utils.writeVideo(outputDirectory + 'output.mp4', newFrames)
 
     naiveFrames = frameList[0:len(frameList):SPEEDUP_FACTOR]
