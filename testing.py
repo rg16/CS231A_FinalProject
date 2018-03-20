@@ -5,6 +5,12 @@ import scipy.io
 import utils
 import video_stabilization as vs
 
+# Global parameters for tuning
+# ---------------------------
+SPEEDUP_FACTOR = 4
+COST_CHAINING = True
+LAMBDA_S = 200
+LAMBDA_A = 80
 
 def findConsecutiveCenteringCosts(frameList):
     numFrames = len(frameList)
@@ -27,7 +33,6 @@ def findConsecutiveCenteringCosts(frameList):
             centerCost = np.linalg.norm(center1[0:2] - center1hat)
             centeringCosts[i] = centerCost
     return centeringCosts
-
 
 
 #homography cost for frame i, j (assuming grayscale)
@@ -137,9 +142,26 @@ def makeSBS(f1, f2):
         newFrames.append(newFrame)
     return newFrames
 
+'''
+COMPUTE_OPTIMUM_FRAMES : Calculates best frames for hyperlapse of given speed
+Arguments:
+    frameList - a list of ndarrays, where each ndarray is a frame in the
+	input video.
 
-def main():
-    frameList = utils.readVideo('andreamble.mov')
+    speedupFactor - determines how many times faster the hyperlapse video
+        should be than the input video.
+
+Returns:
+    newFrames - A list of frames containing the hyperlapse video using
+         the optimal frame selection algorithm outlined in the paper
+         "Real Time Hyperlapse Creation via Optimal Frame Selection" by
+         Joshi et al.
+
+    costMatrix - The matrix encoding the cost of traversing from frame i in
+         frameList to frame j.
+'''
+def compute_optimum_frames(frameList, speedupFactor):
+
     numFrames = len(frameList)
     costMatrix = np.zeros((numFrames, numFrames))
     traceBack = np.zeros((numFrames, numFrames))
@@ -154,7 +176,7 @@ def main():
 
     centeringCosts = None
     cumSumCosts = None
-    if optimizeSpeed:
+    if COST_CHAINING:
         centeringCosts = findConsecutiveCenteringCosts(frameList)
         cumSumCosts = np.cumsum(centeringCosts)
         cumSumCosts = np.insert(cumSumCosts, 0, 0.0, axis=0) #add a zero to the beginning of cumsum to make indexing easier
@@ -166,30 +188,30 @@ def main():
         for j in range(i+1, i+w):
             C_m = findHomographyCost(frameList,i,j)
             C_s = findVelocityCost(i, j, speedupFactor)
-            costMatrix[i,j] = C_m + lambda_s * C_s
+            costMatrix[i,j] = C_m + LAMBDA_S * C_s
             homographyCostMat[i,j] = C_m
 
     for i in range(g, len(frameList)):
 #        print 'progress; ', float(i)/len(frameList), '%'
         for j in range(i+1, min(i+w, len(frameList))):
             C_m = 0
-            if (optimizeSpeed):
+
+            if (COST_CHAINING):
                 C_m = cumSumCosts[j] - cumSumCosts[i]
             else:
                 C_m = findHomographyCost(frameList, i, j)
+
             C_s = findVelocityCost(i, j, speedupFactor)
-            c = C_m + lambda_s * C_s
+            c = C_m + LAMBDA_S * C_s
             # Could make this faster potentially by not using a for loop
             D_vi = costMatrix[max(0,i-w+1):i-1, i]
-            C_a = [lambda_a * findAccelerationCost(k, i, j) for k in range(max(0, i-w+1), i-1)]
+            C_a = [LAMBDA_A * findAccelerationCost(k, i, j) for k in range(max(0, i-w+1), i-1)]
             D_vi = D_vi + C_a
             costMatrix[i,j] = c + min(D_vi)
 
             index = i - len(D_vi) + np.argmin(D_vi)
             traceBack[i,j] = index
-#            costMatrix[i,j] = c + min([costMatrix[i-k,i] +  lambda_a * findAccelerationCost(i-k, i, j) for k in range(1,w)])
             homographyCostMat[i,j] = C_m
-
 
     min_val = np.inf
     s,d = (numFrames-g, numFrames-g+1)
@@ -214,20 +236,37 @@ def main():
     for i in range(0,len(p)):
       newFrames.append(frameList[int(p[i])])
 
+    return newFrames, costMatrix
+
+def main():
+
+    ### SET INPUT/OUTPUT LOCATIONS ###
+
+    inputFile = 'Input/andreamble.mov'
+    outputDirectory = 'Output/'
+
+    ### -------------------------- ###
+
+    frameList = utils.readVideo(inputFile)
+    newFrames, costMatrix = compute_optimum_frames(frameList, 4)
+
 #    newFrames = vs.stabilize(newFrames) #imported video_stabilization.py as vs
-    utils.writeVideo('test.mp4', newFrames)
+    utils.writeVideo(outputDirectory + 'output.mp4', newFrames)
 
-    naiveFrames = frameList[0:numFrames:speedupFactor]
+    naiveFrames = frameList[0:len(frameList):SPEEDUP_FACTOR]
+    utils.writeVideo(outputDirectory + 'naive_output.mp4', naiveFrames)
 
-    utils.writeVideo('naive_test.mp4', naiveFrames)
+    newStdDev = utils.computeStdDev(newFrames, 90, 5)
+    naiveStdDev = utils.computeStdDev(naiveFrames, 90, 5)
+
+    cv2.imwrite('new_stddev.png', newStdDev)
+    cv2.imwrite('naive_stddev.png', naiveStdDev)
 
     sbsFrames = makeSBS(newFrames, naiveFrames)
-    utils.writeVideo('SBS_test.mp4', sbsFrames)
+    utils.writeVideo(outputDirectory + 'sbs_output.mp4', sbsFrames)
 
-
-    scipy.io.savemat('costMatrix.mat', dict(costMatrix=costMatrix, homographyCostMat=homographyCostMat))
-
-    scipy.io.savemat('costMatrix.mat', dict(costMatrix=costMatrix, homographyCostMat=homographyCostMat))
+#    scipy.io.savemat('costMatrix.mat', dict(costMatrix=costMatrix, homographyCostMat=homographyCostMat))
+#    scipy.io.savemat('costMatrix.mat', dict(costMatrix=costMatrix, homographyCostMat=homographyCostMat))
 
 if __name__ == '__main__':
     main()

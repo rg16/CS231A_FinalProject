@@ -42,3 +42,23 @@ def readVideo(fileName):
   print "Frame size = ", frameList[0].shape
   return frameList
 
+def computeStdDev(frames, start, num):
+  
+  first = frames[start]
+  sequence = first.reshape(first.shape[0], first.shape[1], 1)
+  for i in range(1,num):
+
+    curr = frames[i].reshape((frames[i].shape[0], frames[i].shape[1], 1))
+    sequence = np.concatenate((sequence, curr), axis = 2)  
+
+  [rows, cols, frames] = sequence.shape
+
+  canvas = np.zeros((rows, cols))
+  for i in range(0, rows):
+    for j in range(0, cols):
+    
+      vals = sequence[i,j,:]
+      canvas[i,j] = np.std(vals)
+
+
+  return canvas
