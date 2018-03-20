@@ -13,6 +13,7 @@ def findConsecutiveCenteringCosts(frameList):
     tau_c = 0.1*d
     gamma = 0.5*d
     for i in range(numFrames-1):
+        print 'progress; ', float(i)/len(frameList), '%'
         im1 = frameList[i]
         im2 = frameList[i+1]
         H, matches1, matches2 = getHomography(im1, im2)
@@ -124,23 +125,19 @@ def matchFeatures(im1, kp1, des1, im2, kp2, des2, matcher='flann', minMatchCount
         else:
             return None, None
 
-    """
-    if matcher == 'bf':
-        bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-        matches = bf.match(des1, des2)
-        matches = sorted(matches, key=lambda x:x.distance )
-        matched = None
-        draw_params = dict(matchColor=(0,255,0),
-                           singlePointColor=(255,0,0),
-                           flags = 0)
-        matched = cv2.drawMatches(first,kp1,second,kp2,matches[:20], None,**draw_params)
-        cv2.imwrite('brute_force_matches.png', matched)
-    """
-
+def makeSBS(f1, f2):
+    newFrames = []
+    for i, frame in enumerate(f1):
+        if i == len(f2):
+            break
+        frame2 = f2[i]
+        newFrame = np.concatenate((frame, frame2))
+        newFrames.append(newFrame)
+    return newFrames
 
 
 def main():
-    frameList = utils.readVideo('longTest.mov')
+    frameList = utils.readVideo('andreamble.mov')
     numFrames = len(frameList)
     costMatrix = np.zeros((numFrames, numFrames))
     traceBack = np.zeros((numFrames, numFrames))
@@ -149,8 +146,8 @@ def main():
     w = 2*speedupFactor
 
     g = 4
-    lambda_s = 1 # Parameter weight for velocity cost
-    lambda_a = 0 # Parameter for acceleration cost
+    lambda_s = 200 # Parameter weight for velocity cost
+    lambda_a = 80 # Parameter for acceleration cost
     optimizeSpeed = True
 
     centeringCosts = None
@@ -215,7 +212,8 @@ def main():
     for i in range(0,len(p)):
       newFrames.append(frameList[int(p[i])])
 
-    utils.writeVideo('longtest.mp4', newFrames)
+#    newFrames = vs.stabilize(newFrames) #imported video_stabilization.py as vs
+    utils.writeVideo('test.mp4', newFrames)
 
     naiveFrames = frameList[0:numFrames:speedupFactor]
     utils.writeVideo('naive_longtest.mp4', naiveFrames)
@@ -226,19 +224,10 @@ def main():
     cv2.imwrite('new_stddev.png', newStdDev)
     cv2.imwrite('naive_stddev.png', naiveStdDev)
 
-#    for i in range(0,5):
-#      naive_file = 'Naive/naive' + str(i+1) + '.png'
-#      reg_file = 'Reg/reg' + str(i+1) + '.png'
-#      cv2.imwrite(naive_file, naiveFrames[90+i])
-#      cv2.imwrite(reg_file, newFrames[90+i])
+    sbsFrames = makeSBS(newFrames, naiveFrames)
+    utils.writeVideo('SBS_test.mp4', sbsFrames)
 
-#    half = len(newFrames)/2
-#    print 'Stabilizing 1'
-#    newFrames1 = vs.stabilize(newFrames[0:half]) #imported video_stabilization.py as vs
-#    print 'Stabilizing 2'
-#    newFrames2 = vs.stabilize(newFrames[half:end])
-#    newFrames = newFrames1 + newFrames2
-#    utils.writeVideo('stabilized_longtest.mp4', newFrames)
+
     scipy.io.savemat('costMatrix.mat', dict(costMatrix=costMatrix, homographyCostMat=homographyCostMat))
     scipy.io.savemat('costMatrix.mat', dict(costMatrix=costMatrix, homographyCostMat=homographyCostMat))
 
