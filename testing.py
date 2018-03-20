@@ -5,7 +5,6 @@ import scipy.io
 import utils
 import video_stabilization as vs
 
-
 def findConsecutiveCenteringCosts(frameList):
     numFrames = len(frameList)
     centeringCosts = np.zeros((numFrames-1,))
@@ -26,7 +25,6 @@ def findConsecutiveCenteringCosts(frameList):
             centerCost = np.linalg.norm(center1[0:2] - center1hat)
             centeringCosts[i] = centerCost
     return centeringCosts
-
 
 
 #homography cost for frame i, j (assuming grayscale)
@@ -140,8 +138,9 @@ def matchFeatures(im1, kp1, des1, im2, kp2, des2, matcher='flann', minMatchCount
     """
 
 
+
 def main():
-    frameList = utils.readVideo('testVideo2.mp4')
+    frameList = utils.readVideo('longTest.mov')
     numFrames = len(frameList)
     costMatrix = np.zeros((numFrames, numFrames))
     traceBack = np.zeros((numFrames, numFrames))
@@ -216,16 +215,31 @@ def main():
     for i in range(0,len(p)):
       newFrames.append(frameList[int(p[i])])
 
-#    newFrames = vs.stabilize(newFrames) #imported video_stabilization.py as vs
-    utils.writeVideo('test.mp4', newFrames)
+    utils.writeVideo('longtest.mp4', newFrames)
 
     naiveFrames = frameList[0:numFrames:speedupFactor]
+    utils.writeVideo('naive_longtest.mp4', naiveFrames)
+    
+    newStdDev = utils.computeStdDev(newFrames, 90, 5)
+    naiveStdDev = utils.computeStdDev(naiveFrames, 90, 5)
 
-    utils.writeVideo('naive_test.mp4', naiveFrames)
+    cv2.imwrite('new_stddev.png', newStdDev)
+    cv2.imwrite('naive_stddev.png', naiveStdDev)
 
+#    for i in range(0,5):
+#      naive_file = 'Naive/naive' + str(i+1) + '.png'
+#      reg_file = 'Reg/reg' + str(i+1) + '.png'
+#      cv2.imwrite(naive_file, naiveFrames[90+i])
+#      cv2.imwrite(reg_file, newFrames[90+i])
 
+#    half = len(newFrames)/2
+#    print 'Stabilizing 1'
+#    newFrames1 = vs.stabilize(newFrames[0:half]) #imported video_stabilization.py as vs
+#    print 'Stabilizing 2'
+#    newFrames2 = vs.stabilize(newFrames[half:end])
+#    newFrames = newFrames1 + newFrames2
+#    utils.writeVideo('stabilized_longtest.mp4', newFrames)
     scipy.io.savemat('costMatrix.mat', dict(costMatrix=costMatrix, homographyCostMat=homographyCostMat))
-
     scipy.io.savemat('costMatrix.mat', dict(costMatrix=costMatrix, homographyCostMat=homographyCostMat))
 
 if __name__ == '__main__':
