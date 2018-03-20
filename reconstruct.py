@@ -4,23 +4,28 @@ import csv
 import cv2
 
 def parseArguments():
-  
+
   parser = argparse.ArgumentParser()
   parser.add_argument('inputVideo', help='The video to be hyperlapsed')
 
   return parser.parse_args()
 
 
-def getFrameList(input):
-  
+def getFrameList(input, p):
+
   frameList = []
   cap = cv2.VideoCapture(input)
+  count = 0
+  p_count = 0
   while(cap.isOpened()):
     ret, frame = cap.read()
     if ret:
-      watermark = int(0.1 * frame.shape[0])
-      frame = frame[:-watermark, :, :]
-      frameList.append(frame)
+        if count == p[p_count]:
+          watermark = int(0.1 * frame.shape[0])
+          frame = frame[:-watermark, :, :]
+          frameList.append(frame)
+          p_count = p_count + 1
+        count = count + 1
     else:
       break
   cap.release()
@@ -30,22 +35,17 @@ def main():
 
   args = parseArguments()
 
-  print args
-  frameList = getFrameList(args.inputVideo)
-  
   p = []
-  with open('Output/p.csv') as csvfile:
+  with open('Output/andreamble/p.csv') as csvfile:
     reader = csv.reader(csvfile)
     for row in reader:
-      print row
-  
-  newFrames = []
-  for i in range(0, len(p)):
-    frame = frameList[p[i]]
-    newFrames.append(frame)
+        for i in row:
+            p.append(int(float(i)))
 
-  utils.writeVideo('test.mp4', newFrames)
-  
+  frameList = getFrameList(args.inputVideo, p)
+
+  utils.writeVideo('Output/andreamble/colortest.mp4', frameList)
+
 
 if __name__ == '__main__':
   main()
