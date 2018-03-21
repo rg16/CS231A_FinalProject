@@ -12,6 +12,7 @@ SPEEDUP_FACTOR = 8
 COST_CHAINING = True
 LAMBDA_S = 200
 LAMBDA_A = 80
+LAMBDA_B = 100
 
 def findConsecutiveCenteringCosts(frameList):
     numFrames = len(frameList)
@@ -81,10 +82,9 @@ def findAccelerationCost(h,i,j):
     return min(diff,tau_a)
 
 def findBlurCost(frameList, j):
-# Only calculating the blurriness of the next frame
-    im1 = frameList[i]
-    im2 = frameList[j]
-    blurriness = cv2.Laplacian(im1, im2).var() 
+    im1 = frameList[j]
+    blurriness = cv2.Laplacian(im1, cv2.CV_64F).var() 
+    blurriness = 0 if blurriness > 100 else 1 - blurriness/100
     return blurriness
 
 def getHomography(im1, im2):
@@ -191,6 +191,11 @@ def compute_optimum_frames(frameList, speedupFactor):
 
     homographyCostMat = np.zeros((len(frameList),len(frameList)))
 
+    blurList = []
+    for i in range(0, numFrames):
+      blur = findBlurCost(frameList, i)
+      blurList.append(findBlurCost(frameList, i))
+
     for i in range(0, g):
 #        print 'progress; ', float(i)/len(frameList), '%'
         for j in range(i+1, i+w):
@@ -199,7 +204,7 @@ def compute_optimum_frames(frameList, speedupFactor):
             costMatrix[i,j] = C_m + LAMBDA_S * C_s
             homographyCostMat[i,j] = C_m
 
-    for i in range(g, len(frameList)):
+    for i in range(g, numFrames):
 #        print 'progress; ', float(i)/len(frameList), '%'
         for j in range(i+1, min(i+w, len(frameList))):
             C_m = 0
@@ -210,7 +215,7 @@ def compute_optimum_frames(frameList, speedupFactor):
                 C_m = findHomographyCost(frameList, i, j)
 
             C_s = findVelocityCost(i, j, speedupFactor)
-            c = C_m + LAMBDA_S * C_s
+            c = C_m + LAMBDA_S * C_s + LAMBDA_B * blurList[j]
             # Could make this faster potentially by not using a for loop
             D_vi = costMatrix[max(0,i-w+1):i-1, i]
             C_a = [LAMBDA_A * findAccelerationCost(k, i, j) for k in range(max(0, i-w+1), i-1)]
@@ -250,15 +255,15 @@ def main():
 
     ### SET INPUT/OUTPUT LOCATIONS ###
 
-    inputFile = 'Input/andreamble.mov'
-    outputDirectory = 'Output/andreamble/'
+    inputFile = 'Input/testVideo2.mp4'
+    outputDirectory = 'Output/testVideo2/'
 
     ### -------------------------- ###
 
     frameList = utils.readVideo(inputFile)
     newFrames, costMatrix, p = compute_optimum_frames(frameList, SPEEDUP_FACTOR)
 
-    pFile = open(outputDirectory + 'p.csv', 'wb')
+    pFile = open(outputDirectory + 'p.csv', 'w+')
     with pFile:
         writer = csv.writer(pFile, quoting = csv.QUOTE_ALL)
         writer.writerow(p)
@@ -271,11 +276,11 @@ def main():
     naiveFrames = frameList[0:len(frameList):SPEEDUP_FACTOR]
     utils.writeVideo(outputDirectory + 'naive_output.mp4', naiveFrames)
 
-    newStdDev = utils.computeStdDev(newFrames, 90, 5)
-    naiveStdDev = utils.computeStdDev(naiveFrames, 90, 5)
+#    newStdDev = utils.computeStdDev(newFrames, 90, 5)
+#    naiveStdDev = utils.computeStdDev(naiveFrames, 90, 5)
 
-    cv2.imwrite('new_stddev.png', newStdDev)
-    cv2.imwrite('naive_stddev.png', naiveStdDev)
+#    cv2.imwrite('new_stddev.png', newStdDev)
+#    cv2.imwrite('naive_stddev.png', naiveStdDev)
 
     sbsFrames = makeSBS(newFrames, naiveFrames)
     utils.writeVideo(outputDirectory + 'sbs_output.mp4', sbsFrames)
