@@ -9,7 +9,7 @@ import time
 
 # Global parameters for tuning
 # ---------------------------
-SPEEDUP_FACTOR = 10
+SPEEDUP_FACTOR = 4
 COST_CHAINING = True
 LAMBDA_S = 200
 LAMBDA_A = 80
@@ -199,7 +199,7 @@ def compute_optimum_frames(frameList, speedupFactor):
     for i in range(0, g):
         for j in range(i+1, i+w):
             C_m = findHomographyCost(frameList,i,j)
-            C_s = findVelocityCost(i, j, SPEEDUP_FACTOR)
+            C_s = findVelocityCost(i, j, speedupFactor)
             costMatrix[i,j] = C_m + LAMBDA_S * C_s
             homographyCostMat[i,j] = C_m
 
@@ -212,7 +212,7 @@ def compute_optimum_frames(frameList, speedupFactor):
             else:
                 C_m = findHomographyCost(frameList, i, j)
 
-            C_s = findVelocityCost(i, j, SPEEDUP_FACTOR)
+            C_s = findVelocityCost(i, j, speedupFactor)
             c = C_m + LAMBDA_S * C_s + LAMBDA_B * blurList[j]
             # Could make this faster potentially by not using a for loop
             D_vi = costMatrix[max(0,i-w+1):i-1, i]
@@ -253,8 +253,8 @@ def main():
 
     ### SET INPUT/OUTPUT LOCATIONS ###
 
-    inputFile = 'Input/rickyrun.mov'
-    outputDirectory = 'Output/rickyrun/'
+    inputFile = 'Input/selfie.mp4'
+    outputDirectory = 'Output/selfie/'
 
     ### -------------------------- ###
 
@@ -282,11 +282,14 @@ def main():
     naiveFrames = frameList[0:len(frameList):SPEEDUP_FACTOR]
     utils.writeVideo(outputDirectory + 'naive_output.mp4', naiveFrames)
 
-#    newStdDev = utils.computeStdDev(newFrames, 90, 5)
-#    naiveStdDev = utils.computeStdDev(naiveFrames, 90, 5)
+    newStdDev = utils.computeStdDev(newFrames, 32, 3)
+    naiveStdDev = utils.computeStdDev(naiveFrames, 32, 3)
 
-#    cv2.imwrite('new_stddev.png', newStdDev)
-#    cv2.imwrite('naive_stddev.png', naiveStdDev)
+    cv2.imwrite(outputDirectory + 'stddev.png', newStdDev)
+    cv2.imwrite(outputDirectory + 'naive_stddev.png', naiveStdDev)
+
+    print 'Optimum Standard Dev = ', np.mean(newStdDev)
+    print 'Naive Standard Dev = ', np.mean(naiveStdDev)
 
     sbsFrames = makeSBS(newFrames, naiveFrames)
     utils.writeVideo(outputDirectory + 'sbs_output.mp4', sbsFrames)
