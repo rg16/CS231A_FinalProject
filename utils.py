@@ -4,6 +4,24 @@ import matplotlib.pyplot as plt
 import scipy.io
 import skvideo.io
 
+
+
+def makeSBS(vid1, vid2, outputVid):
+  writer = skvideo.io.FFmpegWriter(outputVid)
+  cap1 = cv2.VideoCapture(vid1)
+  cap2 = cv2.VideoCapture(vid2)
+  while(cap1.isOpened() and cap2.isOpened()):
+    ret1, frame1 = cap1.read()
+    ret2, frame2 = cap2.read()
+    if ret1 and ret2:
+      newFrame = np.concatenate((frame1, frame2))
+      writer.writeFrame(newFrame)
+    else:
+      break
+  writer.close()
+  cap.release()
+
+
 def writeVideo(outputFile, frameList):
   """
   fourcc = cv2.VideoWriter_fourcc(*'mp4v')
