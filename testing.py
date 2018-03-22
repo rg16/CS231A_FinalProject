@@ -5,10 +5,11 @@ import scipy.io
 import utils
 import video_stabilization as vs
 import csv
+import time
 
 # Global parameters for tuning
 # ---------------------------
-SPEEDUP_FACTOR = 8
+SPEEDUP_FACTOR = 10
 COST_CHAINING = True
 LAMBDA_S = 200
 LAMBDA_A = 80
@@ -174,7 +175,6 @@ def compute_optimum_frames(frameList, speedupFactor):
     costMatrix = np.zeros((numFrames, numFrames))
     traceBack = np.zeros((numFrames, numFrames))
 
-    speedupFactor = 8 # Want to speed up the video by a factor of 4
     w = 2*speedupFactor
 
     g = 4
@@ -197,15 +197,13 @@ def compute_optimum_frames(frameList, speedupFactor):
       blurList.append(findBlurCost(frameList, i))
 
     for i in range(0, g):
-#        print 'progress; ', float(i)/len(frameList), '%'
         for j in range(i+1, i+w):
             C_m = findHomographyCost(frameList,i,j)
-            C_s = findVelocityCost(i, j, speedupFactor)
+            C_s = findVelocityCost(i, j, SPEEDUP_FACTOR)
             costMatrix[i,j] = C_m + LAMBDA_S * C_s
             homographyCostMat[i,j] = C_m
 
     for i in range(g, numFrames):
-#        print 'progress; ', float(i)/len(frameList), '%'
         for j in range(i+1, min(i+w, len(frameList))):
             C_m = 0
 
@@ -214,7 +212,7 @@ def compute_optimum_frames(frameList, speedupFactor):
             else:
                 C_m = findHomographyCost(frameList, i, j)
 
-            C_s = findVelocityCost(i, j, speedupFactor)
+            C_s = findVelocityCost(i, j, SPEEDUP_FACTOR)
             c = C_m + LAMBDA_S * C_s + LAMBDA_B * blurList[j]
             # Could make this faster potentially by not using a for loop
             D_vi = costMatrix[max(0,i-w+1):i-1, i]
@@ -255,13 +253,21 @@ def main():
 
     ### SET INPUT/OUTPUT LOCATIONS ###
 
-    inputFile = 'Input/testVideo2.mp4'
-    outputDirectory = 'Output/testVideo2/'
+    inputFile = 'Input/rickyrun.mov'
+    outputDirectory = 'Output/rickyrun/'
 
     ### -------------------------- ###
 
     frameList = utils.readVideo(inputFile)
+    start = time.time()
     newFrames, costMatrix, p = compute_optimum_frames(frameList, SPEEDUP_FACTOR)
+    end = time.time()
+    runtime = end - start
+    fps = len(frameList) / runtime
+
+    print "Time to compute optimum frames = ", runtime
+    print "Frames per Second of algorithm = ", fps
+    print "Actual speedup = x", float(len(frameList)) / len(newFrames)
 
     pFile = open(outputDirectory + 'p.csv', 'w+')
     with pFile:
