@@ -88,7 +88,7 @@ def computeStdDev(frames, start, num):
   sequence = first.reshape(first.shape[0], first.shape[1], 1)
   for i in range(1,num):
 
-    curr = frames[i].reshape((frames[i].shape[0], frames[i].shape[1], 1))
+    curr = frames[start+i].reshape((frames[start+i].shape[0], frames[start+i].shape[1], 1))
     sequence = np.concatenate((sequence, curr), axis = 2)
 
   [rows, cols, frames] = sequence.shape

@@ -233,6 +233,17 @@ def compute_optimum_frames(frameList, speedupFactor):
             min_val = costMatrix[i,j]
             s,d = (i, j)
 
+    print "Minimum Cost = ", min_val
+
+    cost = 0
+    i = None
+    naiveList = np.arange(0,len(frameList),SPEEDUP_FACTOR)
+    for j in naiveList:
+      if i is not None:
+        cost = cost + costMatrix[i,j]
+      i = j    
+
+    print "Naive Cost = ", cost
     p = [d]
     while s > g:
       p = [s] + p
@@ -253,8 +264,8 @@ def main():
 
     ### SET INPUT/OUTPUT LOCATIONS ###
 
-    inputFile = 'Input/selfie.mp4'
-    outputDirectory = 'Output/selfie/'
+    inputFile = 'Input/rickyrun.mov'
+    outputDirectory = 'Output/rickyrun/'
 
     ### -------------------------- ###
 
@@ -282,8 +293,8 @@ def main():
     naiveFrames = frameList[0:len(frameList):SPEEDUP_FACTOR]
     utils.writeVideo(outputDirectory + 'naive_output.mp4', naiveFrames)
 
-    newStdDev = utils.computeStdDev(newFrames, 32, 3)
-    naiveStdDev = utils.computeStdDev(naiveFrames, 32, 3)
+    newStdDev = utils.computeStdDev(newFrames, 275, 3)
+    naiveStdDev = utils.computeStdDev(naiveFrames, 275, 3)
 
     cv2.imwrite(outputDirectory + 'stddev.png', newStdDev)
     cv2.imwrite(outputDirectory + 'naive_stddev.png', naiveStdDev)
